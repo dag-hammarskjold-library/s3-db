@@ -46,7 +46,7 @@ sub MAIN {
 	my $dbh = DBI->connect('dbi:SQLite:dbname='.$opts->{d},'','');
 	$dbh->{AutoCommit} = 0;
 	
-	$dbh->do(q|create table ods ("bib" int, "lang", "key")|);
+	$dbh->do(q|create table keys ("bib" int, "lang", "key")|);
 	$dbh->do(q|create table extras ("bib" int, "key")|);
 	
 	ODS: {
