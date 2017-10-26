@@ -46,11 +46,11 @@ sub MAIN {
 	my $dbh = DBI->connect('dbi:SQLite:dbname='.$opts->{d},'','');
 	$dbh->{AutoCommit} = 0;
 	
-	$dbh->do(q|create table keys ("bib" int, "lang", "key")|);
-	$dbh->do(q|create table extras ("bib" int, "key")|);
+	$dbh->do(q|create table docs ("bib" int, "lang", "key")|);
+	$dbh->do(q|create table extras ("bib" int, "lang", "key")|);
 	
 	ODS: {
-		my $sth = $dbh->prepare(q|insert into keys values (?,?,?)|);
+		my $sth = $dbh->prepare(q|insert into docs values (?,?,?)|);
 		open my $s3, '-|', 'aws s3 ls s3://undhl-dgacm/Drop/docs_new/ --recursive';
 		while (<$s3>) {
 			chomp;
@@ -60,28 +60,25 @@ sub MAIN {
 			my $bib = (split /\//, $key)[3];
 			my $lang = substr $key,-6,2;
 			say $key;
-			$sth->execute($bib,$lang,$key);		
+			$sth->execute($bib,$lang,$key);			
 		}
-		$dbh->do(q|create index bib on keys (bib)|);
+		$dbh->do(q|create index bib on docs (bib)|);
 	}
 	
 	
 	EXTRAS: {
-		# in process
-		last;
 		my $sth = $dbh->prepare(q|insert into extras values (?,?,?)|);
 		open my $s3, '-|', 'aws s3 ls s3://undhl-dgacm/Drop/extras/ --recursive';
 		while (<$s3>) {
 			chomp;
 			my $key = substr $_,31;
 			my $bib = (split /\//, $key)[2];
-			my $lang = substr $key,-6,2;
+			my $lang = $1 if $key =~ /\-([^\-]+)\.\w+$/;
 			say $key;
 			$sth->execute($bib,$lang,$key);	
 		}
 		$dbh->do(q|create index extras_index on extras (bib)|);
 	}
-	
 	
 	$dbh->commit;
 }
