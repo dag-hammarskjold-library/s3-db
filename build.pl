@@ -46,10 +46,8 @@ sub MAIN {
 	my $dbh = DBI->connect('dbi:SQLite:dbname='.$opts->{d},'','');
 	$dbh->{AutoCommit} = 0;
 	
-	$dbh->do(q|create table docs ("bib" int, "lang", "key")|);
-	$dbh->do(q|create table extras ("bib" int, "lang", "key")|);
-	
 	ODS: {
+		$dbh->do(q|create table docs ("bib" int, "lang", "key")|);
 		my $sth = $dbh->prepare(q|insert into docs values (?,?,?)|);
 		open my $s3, '-|', 'aws s3 ls s3://undhl-dgacm/Drop/docs_new/ --recursive';
 		while (<$s3>) {
@@ -65,8 +63,8 @@ sub MAIN {
 		$dbh->do(q|create index bib on docs (bib)|);
 	}
 	
-	
 	EXTRAS: {
+		$dbh->do(q|create table extras ("bib" int, "lang", "key")|);
 		my $sth = $dbh->prepare(q|insert into extras values (?,?,?)|);
 		open my $s3, '-|', 'aws s3 ls s3://undhl-dgacm/Drop/extras/ --recursive';
 		while (<$s3>) {
@@ -78,6 +76,10 @@ sub MAIN {
 			$sth->execute($bib,$lang,$key);	
 		}
 		$dbh->do(q|create index extras_index on extras (bib)|);
+	}
+	
+	ERRORS: {
+		$dbh->do(q|create table error ("bib" int, "lang", "key"|);
 	}
 	
 	$dbh->commit;
